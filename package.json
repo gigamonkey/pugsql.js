@@ -1,6 +1,6 @@
 {
   "name": "pugsql",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "main": "pugsql.js",
   "scripts": {
@@ -10,7 +10,9 @@
     "type": "git",
     "url": "https://github.com/gigamonkey/pugsql.js.git"
   },
-  "keywords": ["SQL"],
+  "keywords": [
+    "SQL"
+  ],
   "author": "Peter Seibel <peter@gigamonkeys.com>",
   "license": "MIT",
   "description": "",
