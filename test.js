@@ -6,7 +6,8 @@ import { DB } from './pugsql.js';
 
 const db = new DB('db.db', 'schema.sql')
       .addFunction('aFunction', () => 42)
-      .module('queries.sql');
+      .addQueries('queries.sql');
+
 
 function* g() {
   for (let i = 0; i < 5; i++) {

@@ -30,3 +30,6 @@ select * from test
 
 -- :name functionTest :one
 select aFunction()
+
+-- :name addFunctionX :one
+select aFunction()

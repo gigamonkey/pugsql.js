@@ -81,13 +81,24 @@ class DB {
   }
 
   /*
-   * Parse specifications of SQL functions from text file.
+   * Parse specifications of SQL functions from text file and add them as query
+   * methods to this object.
    */
-  module(filename) {
+  addQueries(filename) {
     if (!(filename in this.modules)) {
       this.modules[filename] = this.#loadModule(filename);
     }
-    return this.modules[filename];
+    Object.entries(this.modules[filename]).forEach(([name, fn]) => {
+      if (name in this) {
+        if (name in Object.getPrototypeOf(this)) {
+          throw new Error(`${name} is a reserved method name in DB`);
+        } else {
+          throw new Error(`Already have a query method named ${name}`);
+        }
+      }
+      this[name] = fn;
+    });
+    return this;
   }
 
   #loadModule(filename) {
