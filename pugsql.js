@@ -38,9 +38,7 @@ const kinds = {
     if (column) {
       return (stmt) => (...args) => stmt.get(...args)?.[column];
     } else {
-      return (stmt) =>
-        (...args) =>
-          stmt.get(...args);
+      return (stmt) => (...args) => stmt.get(...args);
     }
   },
 
@@ -48,17 +46,13 @@ const kinds = {
   // otherwise a list of the vaues in the named colunmn.
   all: (column) => {
     if (column) {
-      return (stmt) =>
-        (...args) =>
-          stmt.all(...args).map((r) => r[column]);
+      return (stmt) => (...args) => stmt.all(...args).map((r) => r[column]);
     } else {
-      return (stmt) =>
-        (...args) =>
-          stmt.all(...args);
+      return (stmt) => (...args) => stmt.all(...args);
     }
   },
 
-  // Get a single value from the first column of the first row
+  // Get a single value from the first column of the first row.
   one: () => (stmt) => (...args) => stmt.pluck(true).get(...args),
 
   // Get an array of the values from the first column
@@ -66,7 +60,6 @@ const kinds = {
 };
 
 class DB {
-
   constructor(filename, schema = null, verbose = false) {
     const opts = verbose ? { verbose: console.log } : undefined;
     this.db = new Database(filename, opts);
@@ -82,8 +75,9 @@ class DB {
    * Add a function that can be used in SQL, e.g. this.dbFunction('now', () =>
    * Date.now())
    */
-  dbFunction(name, fn) {
+  addFunction(name, fn) {
     this.db.function(name, fn);
+    return this;
   }
 
   /*

@@ -27,3 +27,6 @@ select * from test
 
 -- :name allWithColumnTest :all(b)
 select * from test
+
+-- :name functionTest :one
+select aFunction()

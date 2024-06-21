@@ -4,7 +4,9 @@ import { DB } from './pugsql.js';
  * Simple smoke test.
  */
 
-const db = new DB('db.db', 'schema.sql').module('queries.sql');
+const db = new DB('db.db', 'schema.sql')
+      .addFunction('aFunction', () => 42)
+      .module('queries.sql');
 
 function* g() {
   for (let i = 0; i < 5; i++) {
@@ -13,17 +15,17 @@ function* g() {
 }
 
 const toInsert = [
-  {a: 'hello', b: 'goodbye'},
-  {a: 'one', b: 'two'},
-  {a: 'red', b: 'green' },
-  {a: 'red', b: 'gold' },
-  {a: 'java', b: 'csa' },
-  {a: 'javascript', b: 'itp' },
+  { a: 'hello', b: 'goodbye' },
+  { a: 'one', b: 'two' },
+  { a: 'red', b: 'green' },
+  { a: 'red', b: 'gold' },
+  { a: 'java', b: 'csa' },
+  { a: 'javascript', b: 'itp' },
 ];
 
 const changed = [
-  {a: 'hello', b: 'goodbye'},
-  {a: 'two', b: 'two'},
+  { a: 'hello', b: 'goodbye' },
+  { a: 'two', b: 'two' },
 ];
 
 const allInserted = [...changed, ...toInsert.slice(2), ...g()];
@@ -42,14 +44,14 @@ const expect = (label, value, expected) => {
 };
 
 // Run a query that happens to do an insert
-expect('runTest', db.runTest(toInsert[0]), {changes: 1, lastInsertRowid: 1});
-expect('runTest', db.runTest(toInsert[1]), {changes: 1, lastInsertRowid: 2});
+expect('runTest', db.runTest(toInsert[0]), { changes: 1, lastInsertRowid: 1 });
+expect('runTest', db.runTest(toInsert[1]), { changes: 1, lastInsertRowid: 2 });
 
 // Get all the values inserted so far
 expect('allTest', db.allTest(), toInsert.slice(0, 2));
 
 // Do an update and get the number of rows changed
-expect('changesTest', db.changesTest(), 1)
+expect('changesTest', db.changesTest(), 1);
 
 // Get the first value
 expect('getTest', db.getTest(), toInsert[0]);
@@ -64,7 +66,7 @@ expect('lastRowIDTest', db.lastRowIDTest(toInsert[2]), 3);
 expect('insertTest - one row', db.insertTest(toInsert[3]), 4);
 
 // Insert multiple rows from an array
-expect('insertTest - array', db.insertTest(toInsert.slice(4,6)), 6);
+expect('insertTest - array', db.insertTest(toInsert.slice(4, 6)), 6);
 
 // Insert multiple rows from a generator
 expect('insertTest - generator', db.insertTest(g()), 11);
@@ -76,7 +78,18 @@ expect('allTest - after', db.allTest(), allInserted);
 expect('oneTest', db.oneTest(), toInsert[0].a);
 
 // Get the list of first values
-expect('listTest', db.listTest(), allInserted.map(x => x.a));
+expect(
+  'listTest',
+  db.listTest(),
+  allInserted.map((x) => x.a),
+);
 
 expect('getWithColumnTest', db.getWithColumnTest(), 'goodbye');
-expect('allWithColumnTest', db.allWithColumnTest(), allInserted.map(x => x.b));
+expect(
+  'allWithColumnTest',
+  db.allWithColumnTest(),
+  allInserted.map((x) => x.b),
+);
+
+
+expect('functionTest', db.functionTest(), 42);
