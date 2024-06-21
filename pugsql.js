@@ -72,6 +72,13 @@ class DB {
   }
 
   /*
+   * Run fn in a transaction. Will throw an exception if the txn fails.
+   */
+  transaction(fn, ...args) {
+    return this.db.transaction(fn)(...args);
+  }
+
+  /*
    * Add a function that can be used in SQL, e.g. this.dbFunction('now', () =>
    * Date.now())
    */

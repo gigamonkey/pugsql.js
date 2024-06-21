@@ -94,3 +94,38 @@ expect(
 
 
 expect('functionTest', db.functionTest(), 42);
+
+db.txTest({a: 'foo'});
+try {
+  db.txTest({a: 'foo'}); // this violates a constraint and will fail.
+} catch {
+  console.log('Got expected exception.');
+  // We expect the first insert to have happened.
+  expect('after no-tx inserts', db.allTxTest(), ['foo']);
+}
+
+try {
+  db.transaction(() => {
+    db.txTest({a: 'bar'});
+    db.txTest({a: 'bar'}); // this violates a constraint and will fail.
+  });
+  console.log('No exception.');
+  console.log(db.allTxTest());
+} catch (e) {
+  console.log('Got expected exception.');
+  // We expect no change since the tx failed.
+  expect('after tx inserts', db.allTxTest(), ['foo']);
+}
+
+try {
+  db.transaction(() => {
+    // this violates a constraint and will fail.
+    db.txTest([{a: 'bar'}, {a: 'bar'}]);
+  });
+  console.log('No exception.');
+  console.log(db.allTxTest());
+} catch (e) {
+  console.log('Got expected exception.');
+  // We expect no change since the tx failed.
+  expect('after tx inserts', db.allTxTest(), ['foo']);
+}

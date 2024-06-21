@@ -33,3 +33,9 @@ select aFunction()
 
 -- :name addFunctionX :one
 select aFunction()
+
+-- :name txTest :insert
+insert into tx_test (a) values ($a)
+
+-- :name allTxTest :list
+select * from tx_test
