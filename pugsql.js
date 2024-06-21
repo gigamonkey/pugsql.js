@@ -14,15 +14,29 @@ const kinds = {
   changes: () => (stmt) => (...args) => stmt.run(...args).changes,
 
   // Execute SQL and return just the lastInsertRowId value
-  lastRowID: () => (stmt) => (...args) => stmt.run(...args).changes,
+  lastRowID: () => (stmt) => (...args) => stmt.run(...args).lastInsertRowid,
+
+  // Insert either one value of all the values in an interable
+  insert: () => (stmt) => (args) => {
+    if (Symbol.iterator in args) {
+      let insert = stmt.database.transaction((items) => {
+        let info;
+        for (const item of items) {
+          info = stmt.run(item);
+        }
+        return info;
+      });
+      return insert(args)?.lastInsertRowid;
+    } else {
+      return stmt.run(args).lastInsertRowid;
+    }
+  },
 
   // Get one row of the results as an object if no column is specified,
   // otherwise the value of the named column in the first row returned
   get: (column) => {
     if (column) {
-      return (stmt) =>
-        (...args) =>
-          stmt.get(...args)?.[column];
+      return (stmt) => (...args) => stmt.get(...args)?.[column];
     } else {
       return (stmt) =>
         (...args) =>
@@ -88,7 +102,11 @@ class DB {
         if (!(spec.kind in kinds)) {
           throw new Error(`Unknown kind of query: ${spec.kind}`);
         }
-        return [spec.name, kinds[spec.kind](spec.arg)(this.db.prepare(spec.sql))];
+        try {
+          return [spec.name, kinds[spec.kind](spec.arg)(this.db.prepare(spec.sql))];
+        } catch {
+          throw new Error(`Can't prepare ${JSON.stringify(spec)}`);
+        }
       }),
     );
   }
@@ -99,13 +117,13 @@ class DB {
     const r = [];
     let current = null;
 
-    lines.forEach((line) => {
-      const m = line.match(/^--\s+:name\s+(\w+)\s+:(\w+)(?:\s+(.*?))?\s*$/);
+    lines.forEach((line, i) => {
+      const m = line.match(/^--\s+:name\s+(\w+)\s+:(\w+)(?:\((.*?)\))?\s*$/);
 
       if (m) {
         if (current != null) r.push(current);
         const [name, kind, arg] = m.slice(1);
-        current = { name, kind, arg, sql: '' };
+        current = { name, kind, arg, sql: '', line: i };
       } else if (!line.match(/^\s*$/)) {
         current.sql += `${line}\n`;
       }
