@@ -15,6 +15,12 @@
   ],
   "author": "Peter Seibel <peter@gigamonkeys.com>",
   "license": "MIT",
+  "bin": {
+    "puglify": "./puglify.js"
+  },
+  "files": [
+    "data/"
+  },
   "description": "",
   "dependencies": {
     "better-sqlite3": "^11.0.0"

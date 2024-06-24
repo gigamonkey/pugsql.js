@@ -19,7 +19,7 @@ const toInsert = [
   { a: 'hello', b: 'goodbye' },
   { a: 'one', b: 'two' },
   { a: 'red', b: 'green' },
-  { a: 'red', b: 'gold' },
+  { a: 'yellow', b: 'gold' },
   { a: 'java', b: 'csa' },
   { a: 'javascript', b: 'itp' },
 ];
@@ -121,6 +121,7 @@ try {
   db.transaction(() => {
     // this violates a constraint and will fail.
     db.txTest([{a: 'bar'}, {a: 'bar'}]);
+
   });
   console.log('No exception.');
   console.log(db.allTxTest());
