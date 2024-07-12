@@ -8,4 +8,4 @@ select * from pragma_table_info($table);
 select name from pragma_table_info($table);
 
 -- :name primaryKeys :list
-select name from pragma_table_info($table) where pk = 1;
+select name from pragma_table_info($table) where pk > 0 order by pk;
