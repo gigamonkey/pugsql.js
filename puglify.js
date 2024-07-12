@@ -4,6 +4,7 @@ import { DB } from './pugsql.js';
 import { argv } from 'process';
 import  path from 'path';
 import { fileURLToPath } from 'url';
+import pluralize from 'pluralize';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,16 +23,6 @@ const camelCase = (s) => s.split('_').map(capitalize).join('');
 
 const lowerCamelCase = (s) => decapitalize(camelCase(s));
 
-const depluralize = (s) => {
-  if (s.match(/ies$/)) {
-    return s.replace(/ies$/, 'y');
-  } else if (s.match(/s$/)) {
-    return s.replace(/s$/, '');
-  } else {
-    return s;
-  }
-}
-
 const param = (n) => '$' + lowerCamelCase(n);
 
 const params = (names) => names.map(param)
@@ -45,16 +36,16 @@ for (const obj of db.allObjects()) {
     const keys = db.primaryKeys({table});
 
     console.log(`-- :name ${lowerCamelCase(table)} :all`);
-    console.log(`select * from ${table}`);
+    console.log(`select * from ${table};`);
     console.log();
 
-    console.log(`-- :name insert${camelCase(depluralize(table))} :insert`);
-    console.log(`insert into ${table} (${columns.join(', ')}) values (${params(columns).join(', ')})`);
+    console.log(`-- :name insert${camelCase(pluralize.singular(table))} :insert`);
+    console.log(`insert into ${table} (${columns.join(', ')}) values (${params(columns).join(', ')});`);
     console.log();
 
     if (keys.length > 0) {
-      console.log(`-- :name get${camelCase(depluralize(table))} :get`);
-      console.log(`select * from ${table} where ${where(keys)}`);
+      console.log(`-- :name get${camelCase(pluralize.singular(table))} :get`);
+      console.log(`select * from ${table} where ${where(keys)};`);
       console.log();
     }
 
