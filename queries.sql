@@ -39,3 +39,7 @@ insert into tx_test (a) values ($a)
 
 -- :name allTxTest :list
 select * from tx_test
+
+
+-- :name hasA :exists
+select * from test where a = $a;

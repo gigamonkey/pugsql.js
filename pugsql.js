@@ -57,6 +57,9 @@ const kinds = {
 
   // Get an array of the values from the first column
   list: () => (stmt) => (...args) => stmt.pluck(true).all(...args),
+
+  // Get a boolean indicating whether the query returned any results.
+  exists: () => (stmt) => (...args) => !!stmt.pluck(true).get(...args),
 };
 
 class DB {

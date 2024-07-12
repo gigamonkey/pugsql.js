@@ -95,6 +95,11 @@ expect(
 
 expect('functionTest', db.functionTest(), 42);
 
+expect('hasA hello', db.hasA({a: 'hello'}), true);
+
+expect('hasA nope', db.hasA({a: 'nope'}), false);
+
+
 db.txTest({a: 'foo'});
 try {
   db.txTest({a: 'foo'}); // this violates a constraint and will fail.
