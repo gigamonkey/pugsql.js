@@ -44,7 +44,7 @@ for (const obj of db.allObjects()) {
     console.log();
 
     if (keys.length > 0) {
-      console.log(`-- :name get${camelCase(pluralize.singular(table))} :get`);
+      console.log(`-- :name ${lowerCamelCase(pluralize.singular(table))} :get`);
       console.log(`select * from ${table} where ${where(keys)};`);
       console.log();
     }
