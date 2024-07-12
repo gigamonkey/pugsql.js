@@ -23,7 +23,8 @@
   ],
   "description": "",
   "dependencies": {
-    "better-sqlite3": "^11.0.0"
+    "better-sqlite3": "^11.1.2",
+    "pluralize": "^8.0.0"
   },
   "devDependencies": {
     "prettier": "^3.3.2"
