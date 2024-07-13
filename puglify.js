@@ -34,6 +34,15 @@ for (const obj of db.allObjects()) {
     const table = obj.tbl_name;
     const columns = db.columns({table});
     const keys = db.primaryKeys({table});
+    const keySet = new Set(keys);
+    const nonKeys = columns.filter(c => !keySet.has(c));
+    const isRowId = !db.isWithoutRowId({table});
+
+    if (keys.length > 0) {
+      console.log(`-- :name ${lowerCamelCase(pluralize.singular(table))} :get`);
+      console.log(`select * from ${table} where ${where(keys)};`);
+      console.log();
+    }
 
     console.log(`-- :name ${lowerCamelCase(table)} :all`);
     console.log(`select * from ${table};`);
@@ -43,9 +52,16 @@ for (const obj of db.allObjects()) {
     console.log(`insert into ${table} (${columns.join(', ')}) values (${params(columns).join(', ')});`);
     console.log();
 
-    if (keys.length > 0) {
-      console.log(`-- :name ${lowerCamelCase(pluralize.singular(table))} :get`);
-      console.log(`select * from ${table} where ${where(keys)};`);
+    if (keys.length > 0 && nonKeys.length > 0) {
+      console.log(`-- :name update${camelCase(pluralize.singular(table))} :run`);
+      console.log(`update ${table} set (${nonKeys.join(', ')}) = (${params(nonKeys).join(', ')}) where ${where(keys)}`);
+      console.log();
+    }
+
+    if (isRowId) {
+
+      console.log(`-- :name make${camelCase(pluralize.singular(table))} :insert`);
+      console.log(`insert into ${table} (${nonKeys.join(', ')}) values (${params(nonKeys).join(', ')});`);
       console.log();
     }
 

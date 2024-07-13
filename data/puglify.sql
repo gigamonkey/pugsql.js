@@ -9,3 +9,6 @@ select name from pragma_table_info($table);
 
 -- :name primaryKeys :list
 select name from pragma_table_info($table) where pk > 0 order by pk;
+
+-- :name isWithoutRowId :exists
+select * from pragma_index_info($table);
