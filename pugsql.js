@@ -59,7 +59,7 @@ const kinds = {
   list: () => (stmt) => (...args) => stmt.pluck(true).all(...args),
 
   // Get a boolean indicating whether the query returned any results.
-  exists: () => (stmt) => (...args) => !!stmt.pluck(true).get(...args),
+  exists: () => (stmt) => (...args) => stmt.get(...args) != undefined,
 };
 
 class DB {
