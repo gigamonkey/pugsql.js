@@ -54,7 +54,7 @@ for (const obj of db.allObjects()) {
 
     if (foreignKeys.length > 0) {
       const others = foreignKeys.map(k => camelCase(pluralize.singular(k.table))).join('And');
-      const keys = foreignKeys.map(k => lowerCamelCase(k.from));
+      const keys = foreignKeys.map(k => k.from);
       console.log(`-- :name ${lowerCamelCase(pluralize.singular(table))}For${others} :get`);
       console.log(`select * from ${table} where ${where(keys)};`);
       console.log();
