@@ -1,5 +1,12 @@
 #!/usr/bin/env node
 
+/*
+ * Generate a bunch of standard queries based on SQLite metadata. I typically
+ * generate these to a separate .sql file and then add it and also custom
+ * queries to my pugsql DB object. Another approach would be to generate these
+ * and only copy the ones you need into your actual .sql file.
+ */
+
 import { DB } from './pugsql.js';
 import { argv } from 'process';
 import  path from 'path';
@@ -34,12 +41,25 @@ for (const obj of db.allObjects()) {
     const table = obj.tbl_name;
     const columns = db.columns({table});
     const keys = db.primaryKeys({table});
+    const foreignKeys = db.foreignKeys({table});
     const keySet = new Set(keys);
     const nonKeys = columns.filter(c => !keySet.has(c));
     const isRowId = !db.isWithoutRowId({table});
 
     if (keys.length > 0) {
       console.log(`-- :name ${lowerCamelCase(pluralize.singular(table))} :get`);
+      console.log(`select * from ${table} where ${where(keys)};`);
+      console.log();
+    }
+
+    if (foreignKeys.length > 0) {
+      const others = foreignKeys.map(k => camelCase(pluralize.singular(k.table))).join('And');
+      const keys = foreignKeys.map(k => lowerCamelCase(k.from));
+      console.log(`-- :name ${lowerCamelCase(pluralize.singular(table))}For${others} :get`);
+      console.log(`select * from ${table} where ${where(keys)};`);
+      console.log();
+
+      console.log(`-- :name ${lowerCamelCase(table)}For${others} :all`);
       console.log(`select * from ${table} where ${where(keys)};`);
       console.log();
     }
