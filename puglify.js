@@ -78,8 +78,7 @@ for (const obj of db.allObjects()) {
       console.log();
     }
 
-    if (isRowId) {
-
+    if (isRowId && nonKeys.length > 0) {
       console.log(`-- :name make${camelCase(pluralize.singular(table))} :insert`);
       console.log(`insert into ${table} (${nonKeys.join(', ')}) values (${params(nonKeys).join(', ')});`);
       console.log();
