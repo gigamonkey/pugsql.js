@@ -71,7 +71,6 @@ class DB {
     if (schema) {
       this.db.exec(fs.readFileSync(schema, 'utf8'));
     }
-    this.modules = {};
   }
 
   /*
@@ -95,35 +94,30 @@ class DB {
    * methods to this object.
    */
   addQueries(filename) {
-    if (!(filename in this.modules)) {
-      this.modules[filename] = this.#loadModule(filename);
-    }
-    Object.entries(this.modules[filename]).forEach(([name, fn]) => {
-      if (name in this) {
-        if (name in Object.getPrototypeOf(this)) {
-          throw new Error(`${name} is a reserved method name in DB`);
-        } else {
-          throw new Error(`Already have a query method named ${name}`);
-        }
-      }
-      this[name] = fn;
+    this.#specs(filename).forEach((spec) => {
+      const name = this.#checkName(spec.name);
+      this[name] = this.#makeMethod(spec);
     });
     return this;
   }
 
-  #loadModule(filename) {
-    return Object.fromEntries(
-      this.#specs(filename).map((spec) => {
-        if (!(spec.kind in kinds)) {
-          throw new Error(`Unknown kind of query: ${spec.kind} in ${spec.name}`);
-        }
-        try {
-          return [spec.name, kinds[spec.kind](spec.arg)(this.db.prepare(spec.sql))];
-        } catch (e) {
-          throw new Error(`Can't prepare ${JSON.stringify(spec)}`, { cause: e } );
-        }
-      }),
-    );
+  #checkName(name) {
+    if (name in this) {
+      if (name in Object.getPrototypeOf(this)) {
+        throw new Error(`${name} is a reserved method name in DB`);
+      } else {
+        throw new Error(`Already have a query method named ${name}`);
+      }
+    }
+    return name;
+  }
+
+  #makeMethod(spec) {
+    try {
+      return kinds[spec.kind](spec.arg)(this.db.prepare(spec.sql));
+    } catch (e) {
+      throw new Error(`Can't prepare ${JSON.stringify(spec)}`, { cause: e } );
+    }
   }
 
   #specs(filename) {
