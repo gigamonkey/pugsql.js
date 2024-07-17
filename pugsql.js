@@ -115,12 +115,12 @@ class DB {
     return Object.fromEntries(
       this.#specs(filename).map((spec) => {
         if (!(spec.kind in kinds)) {
-          throw new Error(`Unknown kind of query: ${spec.kind}`);
+          throw new Error(`Unknown kind of query: ${spec.kind} in ${spec.name}`);
         }
         try {
           return [spec.name, kinds[spec.kind](spec.arg)(this.db.prepare(spec.sql))];
-        } catch {
-          throw new Error(`Can't prepare ${JSON.stringify(spec)}`);
+        } catch (e) {
+          throw new Error(`Can't prepare ${JSON.stringify(spec)}`, { cause: e } );
         }
       }),
     );
