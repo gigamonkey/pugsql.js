@@ -42,9 +42,15 @@ for (const obj of db.allObjects()) {
     const columns = db.columns({table});
     const keys = db.primaryKeys({table});
     const foreignKeys = db.foreignKeys({table});
+    const withDefaultValues = db.withDefaultValues({table});
     const keySet = new Set(keys);
     const nonKeys = columns.filter(c => !keySet.has(c));
     const isRowId = !db.isWithoutRowId({table});
+    const hasDefault = new Set(withDefaultValues);
+
+    const tableName = camelCase(pluralize.singular(table));
+
+    //console.warn(`table: ${table}; keys: ${keys}; nonKeys: ${nonKeys}; withDefaultValues: ${JSON.stringify(withDefaultValues)}`);
 
     if (keys.length > 0) {
       console.log(`-- :name ${lowerCamelCase(pluralize.singular(table))} :get`);
@@ -68,18 +74,30 @@ for (const obj of db.allObjects()) {
     console.log(`select * from ${table};`);
     console.log();
 
-    console.log(`-- :name insert${camelCase(pluralize.singular(table))} :insert`);
+    console.log(`-- :name insert${tableName} :insert`);
     console.log(`insert into ${table} (${columns.join(', ')}) values (${params(columns).join(', ')});`);
     console.log();
 
+    if (withDefaultValues.length > 0) {
+      const cols = columns.filter(c => !hasDefault.has(c));
+      console.log(`-- :name insert${tableName}WithDefaultValues :insert`);
+      console.log(`insert into ${table} (${cols.join(', ')}) values (${params(cols).join(', ')});`);
+      console.log();
+      withDefaultValues.forEach(c => {
+        console.log(`-- :name update${tableName}${camelCase(c)} :run`);
+        console.log(`update ${table} set ${c} = ${param(c)} where ${where(keys)}`);
+        console.log();
+      });
+    }
+
     if (keys.length > 0 && nonKeys.length > 0) {
-      console.log(`-- :name update${camelCase(pluralize.singular(table))} :run`);
+      console.log(`-- :name update${tableName} :run`);
       console.log(`update ${table} set (${nonKeys.join(', ')}) = (${params(nonKeys).join(', ')}) where ${where(keys)}`);
       console.log();
     }
 
     if (isRowId && nonKeys.length > 0) {
-      console.log(`-- :name make${camelCase(pluralize.singular(table))} :insert`);
+      console.log(`-- :name make${tableName} :insert`);
       console.log(`insert into ${table} (${nonKeys.join(', ')}) values (${params(nonKeys).join(', ')});`);
       console.log();
     }
