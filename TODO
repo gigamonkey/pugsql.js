@@ -1,0 +1,5 @@
+- Clean up data/puglify.sql by making columns explicit
+
+- Write a version of data/puglify.sql for Postgres
+
+- Make puglify take a command line argument to use either SQLite or Postgres.
