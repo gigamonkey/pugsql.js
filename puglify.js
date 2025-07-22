@@ -158,7 +158,8 @@ for (const obj of db.allObjects()) {
     }
 
     if (foreignKeys.length > 0) {
-      emitGetterAndAllByForeignKey(table, foreignKeys);
+      emitGetterByForeignKey(table, foreignKeys);
+      emitAllByForeignKey(table, foreignKeys);
     }
 
     if (withDefaultValues.length > 0) {
