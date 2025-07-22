@@ -30,11 +30,100 @@ const camelCase = (s) => s.split('_').map(capitalize).join('');
 
 const lowerCamelCase = (s) => decapitalize(camelCase(s));
 
+const tableName = (table) => camelCase(pluralize.singular(table));
+
 const param = (n) => '$' + lowerCamelCase(n);
 
 const params = (names) => names.map(param)
 
 const where = (keys) => keys.map(n => `${n} = ${param(n)}`).join(' and ');
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Emitters for the different kinds of queries we may emit for each table
+
+// Get all records from table
+const emitAll = (table) => {
+  console.log(`-- :name ${lowerCamelCase(table)} :all`);
+  console.log(`select * from ${table};`);
+  console.log();
+};
+
+// Get one record by the key
+const emitGetter = (table, keys) => {
+  console.log(`-- :name ${lowerCamelCase(pluralize.singular(table))} :get`);
+  console.log(`select * from ${table} where ${where(keys)};`);
+  console.log();
+};
+
+// Get one record with certain foreign keys.
+const emitGetterByForeignKey = (table, foreignKeys) => {
+  const others = foreignKeys.map(k => camelCase(pluralize.singular(k.table))).join('And');
+  const keys = foreignKeys.map(k => k.from);
+  console.log(`-- :name ${lowerCamelCase(pluralize.singular(table))}For${others} :get`);
+  console.log(`select * from ${table} where ${where(keys)};`);
+  console.log();
+};
+
+// Get all records with certain foreign keys.
+const emitAllByForeignKey = (table, foreignKeys) => {
+  const others = foreignKeys.map(k => camelCase(pluralize.singular(k.table))).join('And');
+  console.log(`-- :name ${lowerCamelCase(table)}For${others} :all`);
+  console.log(`select * from ${table} where ${where(keys)};`);
+  console.log();
+};
+
+// Insert of all columns
+const emitInsert = (table, columns) => {
+  console.log(`-- :name insert${tableName(table)} :insert`);
+  console.log(`insert into ${table} (${columns.join(', ')}) values (${params(columns).join(', ')});`);
+  console.log();
+};
+
+// Insert of all columns without default values. Does include key.
+const emitInsertWithDefaults = (table, notDefaulted) => {
+  console.log(`-- :name insert${tableName(table)}WithDefaultValues :insert`);
+  console.log(`insert into ${table} (${notDefaulted.join(', ')}) values (${params(notDefaulted).join(', ')});`);
+  console.log();
+};
+
+// Updater for each column that is part of a foreign key.
+const emitDefaultColumnUpdaters = (table, keys, withDefaultValues) => {
+  withDefaultValues.forEach(c => {
+    console.log(`-- :name update${tableName(table)}${camelCase(c)} :run`);
+    console.log(`update ${table} set ${c} = ${param(c)} where ${where(keys)}`);
+    console.log();
+  });
+};
+
+// Updater for all non-key columns
+const emitUpdater = (table, keys, nonKeys) => {
+  console.log(`-- :name update${tableName(table)} :run`);
+  console.log(`update ${table} set (${nonKeys.join(', ')}) = (${params(nonKeys).join(', ')}) where ${where(keys)}`);
+  console.log();
+};
+
+// Updater for all non-key columns that don't have default values
+const emitUpdaterWithoutDefaultedColumns = (table, keys, nonKeyNonDefaulted) => {
+  console.log(`-- :name update${tableName(table)}ExceptDefaults :run`);
+  console.log(`update ${table} set (${nonKeyNonDefaulted.join(', ')}) = (${params(nonKeyNonDefaulted).join(', ')}) where ${where(keys)}`);
+  console.log();
+};
+
+// Insert new record with automatic key but all non-key values specified.
+const emitMake = (table, nonKeys) => {
+  console.log(`-- :name make${tableName(table)} :insert`);
+  console.log(`insert into ${table} (${nonKeys.join(', ')}) values (${params(nonKeys).join(', ')});`);
+  console.log();
+};
+
+// Insert values but let rowid key and defaulted columns get set automatically
+const emitMakeWithDefaults = (table, nonKeyNonDefaulted) => {
+  console.log(`-- :name make${tableName(table)}WithDefaultValues :insert`);
+  console.log(`insert into ${table} (${nonKeyNonDefaulted.join(', ')}) values (${params(nonKeyNonDefaulted).join(', ')});`);
+  console.log();
+};
+
 
 for (const obj of db.allObjects()) {
   if (obj.type === 'table') {
@@ -43,65 +132,48 @@ for (const obj of db.allObjects()) {
     const keys = db.primaryKeys({table});
     const foreignKeys = db.foreignKeys({table});
     const withDefaultValues = db.withDefaultValues({table});
-    const keySet = new Set(keys);
-    const nonKeys = columns.filter(c => !keySet.has(c));
-    const isRowId = !db.isWithoutRowId({table});
-    const hasDefault = new Set(withDefaultValues);
-    const nonKeyNonDefault = columns.filter(c => !keySet.has(c) && !hasDefault.has(c));
 
-    const tableName = camelCase(pluralize.singular(table));
+    const keySet = new Set(keys);
+    const hasDefault = new Set(withDefaultValues);
+
+    const nonKeys = columns.filter(c => !keySet.has(c));
+    const notDefaulted = columns.filter(c => !hasDefault.has(c));
+
+    const isRowId = !db.isWithoutRowId({table});
+    const nonKeyNonDefaulted = columns.filter(c => !keySet.has(c) && !hasDefault.has(c));
 
     //console.warn(`table: ${table}; keys: ${keys}; nonKeys: ${nonKeys}; withDefaultValues: ${JSON.stringify(withDefaultValues)}`);
 
+    emitAll(table);
+    emitInsert(table, columns);
+
     if (keys.length > 0) {
-      console.log(`-- :name ${lowerCamelCase(pluralize.singular(table))} :get`);
-      console.log(`select * from ${table} where ${where(keys)};`);
-      console.log();
+      emitGetter(table, keys);
+      if (nonKeys.length > 0) {
+        emitUpdater(table, keys, nonKeys);
+      }
+      if (nonKeyNonDefaulted.length > 0) {
+        emitUpdaterWithoutDefaultedColumns(table, keys, nonKeyNonDefaulted);
+      }
     }
 
     if (foreignKeys.length > 0) {
-      const others = foreignKeys.map(k => camelCase(pluralize.singular(k.table))).join('And');
-      const keys = foreignKeys.map(k => k.from);
-      console.log(`-- :name ${lowerCamelCase(pluralize.singular(table))}For${others} :get`);
-      console.log(`select * from ${table} where ${where(keys)};`);
-      console.log();
-
-      console.log(`-- :name ${lowerCamelCase(table)}For${others} :all`);
-      console.log(`select * from ${table} where ${where(keys)};`);
-      console.log();
+      emitGetterAndAllByForeignKey(table, foreignKeys);
     }
-
-    console.log(`-- :name ${lowerCamelCase(table)} :all`);
-    console.log(`select * from ${table};`);
-    console.log();
-
-    console.log(`-- :name insert${tableName} :insert`);
-    console.log(`insert into ${table} (${columns.join(', ')}) values (${params(columns).join(', ')});`);
-    console.log();
 
     if (withDefaultValues.length > 0) {
-      const cols = columns.filter(c => !hasDefault.has(c));
-      console.log(`-- :name insert${tableName}WithDefaultValues :insert`);
-      console.log(`insert into ${table} (${cols.join(', ')}) values (${params(cols).join(', ')});`);
-      console.log();
-      withDefaultValues.forEach(c => {
-        console.log(`-- :name update${tableName}${camelCase(c)} :run`);
-        console.log(`update ${table} set ${c} = ${param(c)} where ${where(keys)}`);
-        console.log();
-      });
+      emitInsertWithDefaults(table, notDefaulted);
+      emitDefaultColumnUpdaters(table, keys, withDefaultValues);
     }
 
-    if (keys.length > 0 && nonKeyNonDefault.length > 0) {
-      console.log(`-- :name update${tableName} :run`);
-      console.log(`update ${table} set (${nonKeyNonDefault.join(', ')}) = (${params(nonKeyNonDefault).join(', ')}) where ${where(keys)}`);
-      console.log();
+    // For normal ROWID tables, we want to be able to insert rows without specifying the key.
+    if (isRowId) {
+      if (nonKeys.length > 0) {
+        emitMake(table, nonKeys);
+      }
+      if (nonKeyNonDefaulted.length > 0) {
+        emitMakeWithDefaults(table, nonKeyNonDefaulted);
+      }
     }
-
-    if (isRowId && nonKeyNonDefault.length > 0) {
-      console.log(`-- :name make${tableName} :insert`);
-      console.log(`insert into ${table} (${nonKeyNonDefault.join(', ')}) values (${params(nonKeyNonDefault).join(', ')});`);
-      console.log();
-    }
-
   }
 }
