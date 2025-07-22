@@ -66,7 +66,7 @@ const emitGetterByForeignKey = (table, foreignKeys) => {
 };
 
 // Get all records with certain foreign keys.
-const emitAllByForeignKey = (table, foreignKeys) => {
+const emitAllByForeignKey = (table, keys, foreignKeys) => {
   const others = foreignKeys.map(k => camelCase(pluralize.singular(k.table))).join('And');
   console.log(`-- :name ${lowerCamelCase(table)}For${others} :all`);
   console.log(`select * from ${table} where ${where(keys)};`);
@@ -159,7 +159,7 @@ for (const obj of db.allObjects()) {
 
     if (foreignKeys.length > 0) {
       emitGetterByForeignKey(table, foreignKeys);
-      emitAllByForeignKey(table, foreignKeys);
+      emitAllByForeignKey(table, keys, foreignKeys);
     }
 
     if (withDefaultValues.length > 0) {
