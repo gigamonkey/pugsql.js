@@ -23,11 +23,11 @@
   ],
   "description": "",
   "dependencies": {
-    "better-sqlite3": "^11.1.2",
+    "better-sqlite3": "^12.2.0",
     "pluralize": "^8.0.0"
   },
   "devDependencies": {
-    "prettier": "^3.3.2"
+    "prettier": "^3.6.2"
   },
   "homepage": "https://github.com/gigamonkey/pugsql.js"
 }
