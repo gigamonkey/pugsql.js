@@ -47,6 +47,7 @@ for (const obj of db.allObjects()) {
     const nonKeys = columns.filter(c => !keySet.has(c));
     const isRowId = !db.isWithoutRowId({table});
     const hasDefault = new Set(withDefaultValues);
+    const nonKeyNonDefault = columns.filter(c => !keySet.has(c) && !hasDefault.has(c));
 
     const tableName = camelCase(pluralize.singular(table));
 
@@ -90,15 +91,15 @@ for (const obj of db.allObjects()) {
       });
     }
 
-    if (keys.length > 0 && nonKeys.length > 0) {
+    if (keys.length > 0 && nonKeyNonDefault.length > 0) {
       console.log(`-- :name update${tableName} :run`);
-      console.log(`update ${table} set (${nonKeys.join(', ')}) = (${params(nonKeys).join(', ')}) where ${where(keys)}`);
+      console.log(`update ${table} set (${nonKeyNonDefault.join(', ')}) = (${params(nonKeyNonDefault).join(', ')}) where ${where(keys)}`);
       console.log();
     }
 
-    if (isRowId && nonKeys.length > 0) {
+    if (isRowId && nonKeyNonDefault.length > 0) {
       console.log(`-- :name make${tableName} :insert`);
-      console.log(`insert into ${table} (${nonKeys.join(', ')}) values (${params(nonKeys).join(', ')});`);
+      console.log(`insert into ${table} (${nonKeyNonDefault.join(', ')}) values (${params(nonKeyNonDefault).join(', ')});`);
       console.log();
     }
 
