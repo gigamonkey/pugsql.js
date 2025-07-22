@@ -133,7 +133,7 @@ class DB {
         if (current != null) r.push(current);
         const [name, kind, arg] = m.slice(1);
         current = { name, kind, arg, sql: '', line: i };
-      } else if (!line.match(/^\s*$/)) {
+      } else if (!line.match(/^\s*$/) && !line.match(/^\s*--/)) {
         current.sql += `${line}\n`;
       }
     });

@@ -12,6 +12,7 @@ import { argv } from 'process';
 import  path from 'path';
 import { fileURLToPath } from 'url';
 import pluralize from 'pluralize';
+import pkg from './package.json' with { type: 'json' };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -66,8 +67,9 @@ const emitGetterByForeignKey = (table, foreignKeys) => {
 };
 
 // Get all records with certain foreign keys.
-const emitAllByForeignKey = (table, keys, foreignKeys) => {
+const emitAllByForeignKey = (table, foreignKeys) => {
   const others = foreignKeys.map(k => camelCase(pluralize.singular(k.table))).join('And');
+  const keys = foreignKeys.map(k => k.from);
   console.log(`-- :name ${lowerCamelCase(table)}For${others} :all`);
   console.log(`select * from ${table} where ${where(keys)};`);
   console.log();
@@ -124,6 +126,7 @@ const emitMakeWithDefaults = (table, nonKeyNonDefaulted) => {
   console.log();
 };
 
+console.log(`-- Generated with pugilify v${pkg.version}.\n`);
 
 for (const obj of db.allObjects()) {
   if (obj.type === 'table') {
@@ -142,28 +145,30 @@ for (const obj of db.allObjects()) {
     const isRowId = !db.isWithoutRowId({table});
     const nonKeyNonDefaulted = columns.filter(c => !keySet.has(c) && !hasDefault.has(c));
 
-    //console.warn(`table: ${table}; keys: ${keys}; nonKeys: ${nonKeys}; withDefaultValues: ${JSON.stringify(withDefaultValues)}`);
+    const dashes = '-'.repeat(Math.max(0, 60 - (table.length + 4)));
+
+    console.log(`-- ${table} ${dashes}\n`);
 
     emitAll(table);
     emitInsert(table, columns);
 
-    if (keys.length > 0) {
+    if (0 < keys.length && keys.length < columns.length) {
       emitGetter(table, keys);
-      if (nonKeys.length > 0) {
-        emitUpdater(table, keys, nonKeys);
-      }
-      if (nonKeyNonDefaulted.length > 0) {
+      emitUpdater(table, keys, nonKeys);
+      if (nonKeyNonDefaulted.length > 0 && withDefaultValues.length > 0) {
         emitUpdaterWithoutDefaultedColumns(table, keys, nonKeyNonDefaulted);
       }
     }
 
-    if (foreignKeys.length > 0) {
+    if (0 < foreignKeys.length && foreignKeys.length < columns.length) {
       emitGetterByForeignKey(table, foreignKeys);
-      emitAllByForeignKey(table, keys, foreignKeys);
+      emitAllByForeignKey(table, foreignKeys);
     }
 
     if (withDefaultValues.length > 0) {
-      emitInsertWithDefaults(table, notDefaulted);
+      if (notDefaulted.length > 0) {
+        emitInsertWithDefaults(table, notDefaulted);
+      }
       emitDefaultColumnUpdaters(table, keys, withDefaultValues);
     }
 
@@ -176,5 +181,7 @@ for (const obj of db.allObjects()) {
         emitMakeWithDefaults(table, nonKeyNonDefaulted);
       }
     }
+
+    console.log('');
   }
 }
