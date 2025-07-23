@@ -37,7 +37,17 @@ const param = (n) => '$' + lowerCamelCase(n);
 
 const params = (names) => names.map(param)
 
-const where = (keys) => keys.map(n => `${n} = ${param(n)}`).join(' and ');
+const where = (keys) => keys.map(n => `${n} = ${param(n)}`).join(' and\n  ');
+
+const emit = (sql) => {
+  const oneline = sql.replaceAll(/\s+/g, ' ');
+  if (oneline.length <= 100) {
+    console.log(oneline);
+  } else {
+    console.log(sql);
+  }
+  console.log();
+};
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,15 +56,13 @@ const where = (keys) => keys.map(n => `${n} = ${param(n)}`).join(' and ');
 // Get all records from table
 const emitAll = (table) => {
   console.log(`-- :name ${lowerCamelCase(table)} :all`);
-  console.log(`select * from ${table};`);
-  console.log();
+  emit(`select * from ${table};`);
 };
 
 // Get one record by the key
 const emitGetter = (table, keys) => {
   console.log(`-- :name ${lowerCamelCase(pluralize.singular(table))} :get`);
-  console.log(`select * from ${table} where ${where(keys)};`);
-  console.log();
+  emit(`select * from ${table}\nwhere\n  ${where(keys)};`);
 };
 
 // Get one record with certain foreign keys.
@@ -62,8 +70,7 @@ const emitGetterByForeignKey = (table, foreignKeys) => {
   const others = foreignKeys.map(k => camelCase(pluralize.singular(k.table))).join('And');
   const keys = foreignKeys.map(k => k.from);
   console.log(`-- :name ${lowerCamelCase(pluralize.singular(table))}For${others} :get`);
-  console.log(`select * from ${table} where ${where(keys)};`);
-  console.log();
+  emit(`select * from ${table}\nwhere\n  ${where(keys)};`);
 };
 
 // Get all records with certain foreign keys.
@@ -71,59 +78,51 @@ const emitAllByForeignKey = (table, foreignKeys) => {
   const others = foreignKeys.map(k => camelCase(pluralize.singular(k.table))).join('And');
   const keys = foreignKeys.map(k => k.from);
   console.log(`-- :name ${lowerCamelCase(table)}For${others} :all`);
-  console.log(`select * from ${table} where ${where(keys)};`);
-  console.log();
+  emit(`select * from ${table}\nwhere\n  ${where(keys)};`);
 };
 
 // Insert of all columns
 const emitInsert = (table, columns) => {
   console.log(`-- :name insert${tableName(table)} :insert`);
-  console.log(`insert into ${table} (${columns.join(', ')}) values (${params(columns).join(', ')});`);
-  console.log();
+  emit(`insert into ${table}\n  (${columns.join(', ')})\nvalues\n  (${params(columns).join(', ')});`);
 };
 
 // Insert of all columns without default values. Does include key.
 const emitInsertWithDefaults = (table, notDefaulted) => {
   console.log(`-- :name insert${tableName(table)}WithDefaultValues :insert`);
-  console.log(`insert into ${table} (${notDefaulted.join(', ')}) values (${params(notDefaulted).join(', ')});`);
-  console.log();
+  emit(`insert into ${table}\n  (${notDefaulted.join(', ')})\nvalues\n  (${params(notDefaulted).join(', ')});`);
 };
 
 // Updater for each column that is part of a foreign key.
 const emitDefaultColumnUpdaters = (table, keys, withDefaultValues) => {
   withDefaultValues.forEach(c => {
     console.log(`-- :name update${tableName(table)}${camelCase(c)} :run`);
-    console.log(`update ${table} set ${c} = ${param(c)} where ${where(keys)}`);
-    console.log();
+    emit(`update ${table} set ${c} = ${param(c)}\nwhere\n  ${where(keys)}`);
   });
 };
 
 // Updater for all non-key columns
 const emitUpdater = (table, keys, nonKeys) => {
   console.log(`-- :name update${tableName(table)} :run`);
-  console.log(`update ${table} set (${nonKeys.join(', ')}) = (${params(nonKeys).join(', ')}) where ${where(keys)}`);
-  console.log();
+  emit(`update ${table} set\n  (${nonKeys.join(', ')}) =\n  (${params(nonKeys).join(', ')})\nwhere\n  ${where(keys)}`);
 };
 
 // Updater for all non-key columns that don't have default values
 const emitUpdaterWithoutDefaultedColumns = (table, keys, nonKeyNonDefaulted) => {
   console.log(`-- :name update${tableName(table)}ExceptDefaults :run`);
-  console.log(`update ${table} set (${nonKeyNonDefaulted.join(', ')}) = (${params(nonKeyNonDefaulted).join(', ')}) where ${where(keys)}`);
-  console.log();
+  emit(`update ${table} set\n  (${nonKeyNonDefaulted.join(', ')}) =\n  (${params(nonKeyNonDefaulted).join(', ')})\nwhere\n  ${where(keys)}`);
 };
 
 // Insert new record with automatic key but all non-key values specified.
 const emitMake = (table, nonKeys) => {
   console.log(`-- :name make${tableName(table)} :insert`);
-  console.log(`insert into ${table} (${nonKeys.join(', ')}) values (${params(nonKeys).join(', ')});`);
-  console.log();
+  emit(`insert into ${table}\n  (${nonKeys.join(', ')})\nvalues\n  (${params(nonKeys).join(', ')});`);
 };
 
 // Insert values but let rowid key and defaulted columns get set automatically
 const emitMakeWithDefaults = (table, nonKeyNonDefaulted) => {
   console.log(`-- :name make${tableName(table)}WithDefaultValues :insert`);
-  console.log(`insert into ${table} (${nonKeyNonDefaulted.join(', ')}) values (${params(nonKeyNonDefaulted).join(', ')});`);
-  console.log();
+  emit(`insert into ${table}\n  (${nonKeyNonDefaulted.join(', ')})\nvalues\n  (${params(nonKeyNonDefaulted).join(', ')});`);
 };
 
 console.log(`-- Generated with pugilify v${pkg.version}.\n`);
