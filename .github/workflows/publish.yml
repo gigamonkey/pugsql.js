@@ -1,5 +1,11 @@
 name: Publish to npm
 
+# Publishes via npm Trusted Publisher (OIDC) — no NPM_TOKEN secret. The
+# Trusted Publisher binding on npmjs.com is configured against THIS file's
+# name (publish.yml); keep the filename stable so the binding stays valid.
+#
+# Trigger: push of a `v*` tag, normally created by `make release`.
+
 on:
   push:
     tags:
@@ -18,4 +24,6 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
       - run: npm install -g npm@latest
+      - run: npm install
+      - run: npm test
       - run: npm publish --provenance --access public

@@ -5,9 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 - **Test**: `npm test` (runs `node test.js` — no framework, plain assertions)
-- **Format**: `npx prettier --write .`
-- **Publish**: `make publish` (runs `npm publish`)
-- **Bump version**: `make update_version` (runs `npm version patch`)
+- **Format**: `npx prettier --write .` (or `make pretty`)
+- **Release**: `make release` (tests, bumps version, tags, pushes; the tag push triggers the npm publish workflow). Bump level: `make release VERSION=minor` etc., defaults to patch.
 
 ## Architecture
 
